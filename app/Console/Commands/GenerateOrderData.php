@@ -1,13 +1,17 @@
 <?php
 
-namespace Database\Seeders;
+namespace App\Console\Commands;
 
-use Illuminate\Database\Seeder;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-class OrderSeeder extends Seeder
+class GenerateOrderData extends Command
 {
+    protected $signature = 'app:generate-order-data';
+
+    protected $description = 'Generate fake order data for seeding';
+
     public const CHUNK_SIZE = 20_000;
 
     public const TOTAL_ORDERS = 5_000_000;
@@ -16,8 +20,13 @@ class OrderSeeder extends Seeder
 
     public const REPEAT_CUSTOMER_PERCENTAGE = 10;
 
-    public function run(): void
+    public function handle()
     {
+        $this->info('Starting data generation...');
+
+        $progressBar = $this->output->createProgressBar(static::TOTAL_ORDERS / static::CHUNK_SIZE);
+        $progressBar->start();
+
         $repeatCustomers = [];
         $maxRepeatCustomers = (int) (static::TOTAL_ORDERS * (static::REPEAT_CUSTOMER_PERCENTAGE / 100));
 
@@ -118,21 +127,25 @@ class OrderSeeder extends Seeder
                 $salesOrders[count($salesOrders) - 1]['total'] = $total;
             }
 
-            foreach ($addresses as $address) {
-                fputcsv($addressFile, $address);
-            }
+            $this->writeChunkToCsv($addressFile, $addresses);
+            $this->writeChunkToCsv($salesOrderFile, $salesOrders);
+            $this->writeChunkToCsv($salesOrderRowsFile, $rows);
 
-            foreach ($salesOrders as $salesOrder) {
-                fputcsv($salesOrderFile, $salesOrder);
-            }
-
-            foreach ($rows as $row) {
-                fputcsv($salesOrderRowsFile, $row);
-            }
+            $progressBar->advance();
         }
 
         fclose($addressFile);
         fclose($salesOrderFile);
         fclose($salesOrderRowsFile);
+
+        $progressBar->finish();
+        $this->info("\nData generation complete!");
+    }
+
+    private function writeChunkToCsv($file, array $data)
+    {
+        foreach ($data as $row) {
+            fputcsv($file, $row);
+        }
     }
 }
