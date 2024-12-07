@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 class OrderSeeder extends Seeder
 {
-    public const CHUNK_SIZE = 10_000;
+    public const CHUNK_SIZE = 2_000;
 
     public const TOTAL_ORDERS = 85_000_000;
 
@@ -77,15 +77,16 @@ class OrderSeeder extends Seeder
                 $discount = random_int(0, 1) ? fake()->randomFloat(2, 1, 50) : null;
                 $total = 0;
 
+                $date = fake()->dateTimeBetween('-2 years', 'now')->format('Y-m-d');
+
                 $salesOrders[] = [
                     'id' => $orderId,
                     'billing_address_id' => $billingId,
                     'shipping_address_id' => $shippingId,
                     'total' => 0,
                     'discount' => $discount,
-                    'order_date' => fake()->dateTimeBetween('-2 years', 'now')->format('Y-m-d'),
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'created_at' => $date,
+                    'updated_at' => $date,
                 ];
 
                 for ($k = 0; $k < random_int(1, 5); $k++) {
@@ -94,9 +95,10 @@ class OrderSeeder extends Seeder
                     $price = $variant->price * $quantity;
 
                     $rows[] = [
+                        'id' => Str::ulid(),
                         'sales_order_id' => $orderId,
                         'product_id' => $variant->product_id,
-                        'variant_id' => $variant->id,
+                        'product_variant_id' => $variant->id,
                         'quantity' => $quantity,
                         'price' => $price,
                         'created_at' => now(),

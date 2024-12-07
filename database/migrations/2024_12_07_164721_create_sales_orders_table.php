@@ -16,6 +16,8 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->foreignUlid('shipping_address_id')->constrained('addresses')->cascadeOnDelete();
             $table->foreignUlid('billing_address_id')->constrained('addresses')->cascadeOnDelete();
+            $table->integer('total')->default(0);
+            $table->integer('discount')->nullable();
             $table->timestamps();
         });
     }
