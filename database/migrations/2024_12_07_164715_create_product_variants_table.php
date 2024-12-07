@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('sku')->unique();
             $table->string('upc', 11)->nullable();
+            $table->integer('price')->nullable();
             $table->foreignUlid('product_id')->constrained()->cascadeOnDelete();
             $table->json('meta')->nullable();
             $table->timestamps();

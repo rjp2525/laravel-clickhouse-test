@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Support\Str;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ProductSeeder extends Seeder
 {
@@ -29,9 +29,21 @@ class ProductSeeder extends Seeder
                 $variants[] = [
                     'id' => Str::ulid(),
                     'product_id' => $productId,
+                    'name' => Str::of(fake()->words(rand(1, 3), true))->title(),
                     'sku' => fake()->bothify('SKU-###-###'),
-                    'upc' => fake()->numerify('############'),
+                    'upc' => fake()->numerify('###########'),
                     'price' => fake()->numberBetween(50_00, 500_00),
+                    'meta' => json_encode([
+                        'size' => fake()->randomElement(['S', 'M', 'L', 'XL', 'XXL']),
+                        'color' => fake()->safeColorName(),
+                        'material' => fake()->randomElement(['cotton', 'polyester', 'wool']),
+                        'dimensions' => [
+                            'length' => fake()->randomFloat(2, 1, 10),
+                            'width' => fake()->randomFloat(2, 1, 10),
+                            'height' => fake()->randomFloat(2, 1, 10),
+                        ],
+                        'weight' => fake()->randomFloat(2, 0.1, 5).' lb',
+                    ]),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
