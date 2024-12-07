@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-      
+
         Schema::create('product_variants', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->string('name');

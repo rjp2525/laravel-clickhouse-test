@@ -10,7 +10,7 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-    { 
+    {
         Schema::create('sales_order_rows', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->foreignUlid('sales_order_id')->constrained('sales_orders')->cascadeOnDelete();

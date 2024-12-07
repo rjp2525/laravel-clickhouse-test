@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-     
+
         Schema::create('sales_orders', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->foreignUlid('shipping_address_id')->constrained('addresses')->cascadeOnDelete();

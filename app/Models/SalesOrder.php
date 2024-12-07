@@ -13,7 +13,7 @@ class SalesOrder extends Model
 
     protected $fillable = [
         'shipping_address_id',
-        'billing_address_id'
+        'billing_address_id',
     ];
 
     public function shippingAddress()

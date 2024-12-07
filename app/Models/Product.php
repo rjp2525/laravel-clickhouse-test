@@ -12,7 +12,7 @@ class Product extends Model
     use HasUlids;
 
     protected $fillable = [
-        'name'
+        'name',
     ];
 
     public function variants()
