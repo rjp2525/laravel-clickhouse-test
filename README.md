@@ -1,66 +1,77 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Experiment: Testing Speed for Generating Report Data & Querying Large Datasets
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This experiment was to compare the performance of MariaDB and ClickHouse for generating report data and querying large datasets. The primary goal was to evaluate how each one handles large-scale queries and to measure the time to generate detailed reports over time.
 
-## About Laravel
+## Prerequisites
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+-   Docker
+-   PHP 8.3+
+-   Go (for running the seeder, this was faster)
+-   [ClickHouse CLI](https://clickhouse.com/docs/en/interfaces/cli)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Getting Started
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. Start the docker containers
 
-## Learning Laravel
+```bash
+sail up -d
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+2. Seed products/variants in MariaDB
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+```bash
+sail artisan db:seed ProductSeeder
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+3. Set up the ClickHouse schema
 
-## Laravel Sponsors
+```bash
+clickhouse-client --host=localhost --user=laravel_user --password=secret_password --database=laravel_reporting < seed-dev/schema-clickhouse.sql
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+4. Replicate the products/variants in ClickHouse
 
-### Premium Partners
+```bash
+sail artisan app:migrate-to-clickhouse
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+5. Generate large dataset of orders and order rows (this will take a while to generate 5 million)
 
-## Contributing
+```bash
+go run seed-dev/seeder.go
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Performance Testing
 
-## Code of Conduct
+1. Query Performance
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```sql
+SELECT COUNT(*) FROM sales_orders;
+```
 
-## Security Vulnerabilities
+```sql
+SELECT COUNT(*) FROM sales_order_rows;
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+**Observations**
 
-## License
+-   MariaDB: ~13 seconds
+-   ClickHouse: 5-27ms consistently
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+2. Report Generation
+
+-   Orders grouped by day
+-   Top shipping locations (country, state, city)
+-   Number of products sold by SKU
+    Report can be viewed at `http://localhost/reports/daily`
+    > **Note:** The PDF generation is the bottleneck, taking significant time for large reports (e.g., 343+ pages). Additionally, formatting large JSON responses also impacts performance.
+
+## Results
+
+-   **Query Performance:** ClickHouse significantly outperforms MariaDB, there isn't even a comparison here
+-   **PDF Generation:** Despite the database query improvements, the PDF rendering process remains a bottleneck due to the sheer volume of data (~343+ pages)
+-   **JSON Formatting:** Returning large datasets as JSON responses introduces latency, which can probably be addressed by pagination or streaming responses
+
+## Conclusion
+
+This experiment successfully demonstrated the advantages of using ClickHouse for large-scale analytics and reporting. ClickHouse consistently handled complex queries on large datasets with minimal latency (~10-20ms), compared to MariaDB's slower performance on just querying the primary ID column (~13 seconds)
