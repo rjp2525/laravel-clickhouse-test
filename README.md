@@ -44,19 +44,16 @@ go run seed-dev/seeder.go
 ## Performance Testing
 
 1. Query Performance
+  ```sql
+  SELECT COUNT(*) FROM sales_orders;
+  ```
+  ```sql
+  SELECT COUNT(*) FROM sales_order_rows;
+  ```
 
-```sql
-SELECT COUNT(*) FROM sales_orders;
-```
-
-```sql
-SELECT COUNT(*) FROM sales_order_rows;
-```
-
-**Observations**
-
--   MariaDB: ~13 seconds
--   ClickHouse: 5-27ms consistently
+  **Observations**
+  -   MariaDB: ~13 seconds
+  -   ClickHouse: 5-27ms consistently
 
 2. Report Generation
 
@@ -75,3 +72,4 @@ SELECT COUNT(*) FROM sales_order_rows;
 ## Conclusion
 
 This experiment successfully demonstrated the advantages of using ClickHouse for large-scale analytics and reporting. ClickHouse consistently handled complex queries on large datasets with minimal latency (~10-20ms), compared to MariaDB's slower performance on just querying the primary ID column (~13 seconds)
+
